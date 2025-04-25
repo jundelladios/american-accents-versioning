@@ -109,6 +109,7 @@ function american_accents_siteversioning_add_call( $request ) {
 
                 // SALTS
                 "$wpcliversion config set JWT_AUTH_SECRET_KEY ".escapeshellarg(american_accents_siteversioning_hasher('JWT_AUTH_SECRET_KEY')),
+                "$wpcliversion config shuffle-salts",
 
                 // rewrite flush cache for new version
                 "$wpcliversion rewrite flush --hard"

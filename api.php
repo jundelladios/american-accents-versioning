@@ -56,11 +56,11 @@ function american_accents_siteversioning_add_call( $request ) {
         {
             // inventory backup tmp
             $cmd = _APP_EXEC_MYSQL_BIN."mysqldump $mysqldumpvars -h "._APP_DB_HOST." -u "._APP_DB_USER." -p"._APP_DB_PASSWORD." "._APP_DB_NAME." > " . $invttmpsql;
-            exec($cmd);
+            shell_exec($cmd);
 
             // wordpress backup tmp
             $cmd = _APP_EXEC_MYSQL_BIN."mysqldump $mysqldumpvars -h ".DB_HOST." -u ".DB_USER." -p".DB_PASSWORD." ".DB_NAME." > " . $wptmpsql;
-            exec($cmd);
+            shell_exec($cmd);
 
             // database creation
             $aasiteversioning->query( "CREATE DATABASE IF NOT EXISTS $newwpdb" );
@@ -69,42 +69,46 @@ function american_accents_siteversioning_add_call( $request ) {
             // after creating import database from backup sql tmp files
             // inventory import
             $cmd = _APP_EXEC_MYSQL_BIN."mysql -h "._APP_DB_HOST." -u "._APP_DB_USER." -p"._APP_DB_PASSWORD." ".$newinvtdb." < " . $invttmpsql;
-            exec($cmd);
+            shell_exec($cmd);
 
             // wp import
             $cmd = _APP_EXEC_MYSQL_BIN."mysql -h ".DB_HOST." -u ".DB_USER." -p".DB_PASSWORD." ".$newwpdb." < " . $wptmpsql;
-            exec($cmd);
+            shell_exec($cmd);
 
             // copy wordpress version template
             $wpinstalltemplate = $theabspathmain.'version/wordpress';
+
+            // ensure wp file repo is updated
+            $execWpUpdate = shell_exec( "cd $wpinstalltemplate && wp core download --path=. --force --skip-content" );
+            
             $wpinstallversion = $theabspathmain.'version/'.$versionid;
-            exec( "cp -rp $wpinstalltemplate $wpinstallversion" );
+            shell_exec( "cp -rp $wpinstalltemplate $wpinstallversion" );
 
 
             $wpcliversion = "cd $theabspathmain"."version/$versionid && "._APP_EXEC_WPCLI."wp";
 
             // set wp config url
             $setwpconfig = array(
-                "$wpcliversion config set DB_NAME ".$newwpdb,
-                "$wpcliversion config set DB_USER ".DB_USER,
-                "$wpcliversion config set DB_PASSWORD ".DB_PASSWORD,
-                "$wpcliversion config set DB_HOST ".DB_HOST,
+                "$wpcliversion config set DB_NAME \"".$newwpdb."\"",
+                "$wpcliversion config set DB_USER \"".DB_USER."\"",
+                "$wpcliversion config set DB_PASSWORD \"".DB_PASSWORD."\"",
+                "$wpcliversion config set DB_HOST \"".DB_HOST."\"",
 
                 // inventory db
-                "$wpcliversion config set _APP_DB_NAME ".$newinvtdb,
-                "$wpcliversion config set _APP_DB_USER "._APP_DB_USER,
-                "$wpcliversion config set _APP_DB_PASSWORD "._APP_DB_PASSWORD,
-                "$wpcliversion config set _APP_DB_HOST "._APP_DB_HOST,
-                "$wpcliversion config set _APP_SUFFIX "._APP_SUFFIX,
-                "$wpcliversion config set _APP_DEVMODE "._APP_DEVMODE,
+                "$wpcliversion config set _APP_DB_NAME \"".$newinvtdb."\"",
+                "$wpcliversion config set _APP_DB_USER \""._APP_DB_USER."\"",
+                "$wpcliversion config set _APP_DB_PASSWORD \""._APP_DB_PASSWORD."\"",
+                "$wpcliversion config set _APP_DB_HOST \""._APP_DB_HOST."\"",
+                "$wpcliversion config set _APP_SUFFIX \""._APP_SUFFIX."\"",
+                "$wpcliversion config set _APP_DEVMODE \""._APP_DEVMODE."\"",
 
                 // version urls
-                "$wpcliversion config set WP_CONTENT_URL ".home_url('/wp-content'),
-                "$wpcliversion config set WP_HOME ".home_url("/version/$versionid"),
-                "$wpcliversion config set WP_SITEURL ".home_url("/version/$versionid"),
+                "$wpcliversion config set WP_CONTENT_URL \"".home_url('/wp-content')."\"",
+                "$wpcliversion config set WP_HOME \"".home_url("/version/$versionid")."\"",
+                "$wpcliversion config set WP_SITEURL \"".home_url("/version/$versionid")."\"",
 
                 // SALTS
-                "$wpcliversion config set JWT_AUTH_SECRET_KEY ".american_accents_siteversioning_hasher('JWT_AUTH_SECRET_KEY'),
+                "$wpcliversion config set JWT_AUTH_SECRET_KEY ".escapeshellarg(american_accents_siteversioning_hasher('JWT_AUTH_SECRET_KEY')),
 
                 // rewrite flush cache for new version
                 "$wpcliversion rewrite flush --hard"
@@ -112,7 +116,7 @@ function american_accents_siteversioning_add_call( $request ) {
 
             // execute set wp config
             $cmdwpconfig = join(" ; ", $setwpconfig);
-            exec($cmdwpconfig);
+            $execCli = shell_exec($cmdwpconfig);
 
             $aasiteversioning->insert($dbprefixes['table'], array(
                 'version' => $versionid,
@@ -129,6 +133,12 @@ function american_accents_siteversioning_add_call( $request ) {
                     <p>WP Config setup has been generated.</p>
                     <p>Database for $versionid both wp and inventory has been created.</p>
                     <p>Flush Rewrite.</p>
+                    <p>CLI Command:</p>
+					<p>$cmdwpconfig</p>
+					<p>CLI Logs:</p>
+					<p>$execCli</p>
+                    <p>WP Core Update Logs:</p>
+                    <p>$execWpUpdate</p>
                     <p><a href='javascript:window.location.reload();'>Click Here</a> to refresh the page and view the new added version in the lists.</p>
                 </div>"
             ;
@@ -215,7 +225,7 @@ function american_accents_siteversioning_remove_call( $request ) {
         );
 
         $cmdexec = join(" && ", $execlists);
-        exec($cmdexec);
+        shell_exec($cmdexec);
 
         american_accents_siteversioning_notice(
             "Version $theversion has been removed."
@@ -281,14 +291,14 @@ function american_accents_siteversioning_production_call( $request ) {
 
         $setwpconfig = array(
             // wp db
-            "$wpclilive config set DB_NAME ".$wpdbver,
+            "$wpclilive config set DB_NAME \"".$wpdbver."\"",
             // inventory db
-            "$wpclilive config set _APP_DB_NAME ".$invdbver
+            "$wpclilive config set _APP_DB_NAME \"".$invdbver."\""
         );
 
         // execute set wp config
         $cmdwpconfig = join(" ; ", $setwpconfig);
-        exec($cmdwpconfig);
+        shell_exec($cmdwpconfig);
 
         $aasiteversioning->update($dbprefixes['table'], array( 'islive' => 0 ), array('islive' => 1));
         $aasiteversioning->update($dbprefixes['table'], array( 'islive' => 1 ), array('version' => $theversion));

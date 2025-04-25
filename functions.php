@@ -19,7 +19,7 @@ function american_accent_versioning_dbprefixes_generated() {
 
 function american_accent_versioning_admin_url($version=null) {
 
-    $adminslug = defined('_APP_WP_ADMIN_SLUG') ? _APP_WP_ADMIN_SLUG : 'secure-login-americanaccents';
+    $adminslug = defined('_APP_WP_ADMIN_SLUG') ? _APP_WP_ADMIN_SLUG : 'wp-admin';
 
     $url = home_url();
 
@@ -79,18 +79,6 @@ function american_accent_versioning_website_versioning_required_constants_notice
     }
 };
 add_action( 'admin_notices', 'american_accent_versioning_website_versioning_required_constants_notice' );
-
-
-function american_accent_versioning_website_requires_login_if_versioned_page()
-{
-
-    if( ! is_user_logged_in() && american_accent_versioning_is_version_abspath() )
-    {
-        wp_redirect( american_accent_versioning_admin_url() );
-        die;
-    }
-}
-add_action( 'template_redirect', 'american_accent_versioning_website_requires_login_if_versioned_page', 10, 2 );
 
 
 /**

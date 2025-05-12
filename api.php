@@ -79,7 +79,7 @@ function american_accents_siteversioning_add_call( $request ) {
             $wpinstalltemplate = $theabspathmain.'version/wordpress';
 
             // ensure wp file repo is updated
-            $execWpUpdate = shell_exec( "cd $wpinstalltemplate && wp core download --path=. --force --skip-content" );
+            $execWpUpdate = shell_exec( "cd $wpinstalltemplate && wp core download --force --skip-content" );
             
             $wpinstallversion = $theabspathmain.'version/'.$versionid;
             shell_exec( "cp -rp $wpinstalltemplate $wpinstallversion" );

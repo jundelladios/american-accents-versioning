@@ -3,10 +3,20 @@
  * Plugin Name: American Accents Site Versioning
  * Plugin URI: mailto:jundell@ad-ios.com
  * Description: Website Versioning for Site Updates
- * Version: 1.0
+ * Version: 1.0.1
  * Author: Jun Dell
  * Author URI: mailto:jundell@ad-ios.com
  */
+
+ // Composer Libs
+require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
+
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+PucFactory::buildUpdateChecker(
+    'https://github.com/jundelladios/american-accents-versioning',
+    __FILE__,
+    'american-accents-versioning'
+  );
 
 function american_accent_versioning_dbprefixes_generated() {
     return array(
